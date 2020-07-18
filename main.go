@@ -55,6 +55,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		path := tempFile.Name()
+		log.Println("Path: ", path)
 		defer tempFile.Close()
 		defer os.Remove(path)
 
@@ -66,7 +67,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "Video Upload Failed")
 			return
 		}
-		log.Println("Writing")
+		log.Println("Writing to temp")
 		// write this byte array to our temporary file
 		tempFile.Write(fileBytes)
 
@@ -79,7 +80,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-		log.Println("inserting")
+		log.Println("DB Entry")
 		// make an entry in the database
 		err = db.InsertVideo(ctx, database.Video{
 			Name: name,
@@ -96,9 +97,6 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Video Upload Successful")
 
 	default:
-		video, _ := db.GetVideo(context.Background(), "ds")
-		log.Println(video)
-		log.Println("Request")
 		fmt.Fprintf(w, "Only POST method supported")
 	}
 }
@@ -123,11 +121,11 @@ func main() {
 
 	// DB and store
 	var err error
-	db, err = database.GetMongoDB(ctx, configs.Database)
+	db, err = database.GetDatabaseClient(ctx, configs.Database)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	store, err = storage.GetIPFSStorage(configs.Storage)
+	store, err = storage.GetStorageClient(configs.Storage)
 	if err != nil {
 		log.Fatalln(err)
 	}

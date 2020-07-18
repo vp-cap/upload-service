@@ -9,6 +9,7 @@ database:
   dbPass: "cap-root"
 
 storage:
-  clusterPeerAddr: "/ip4/127.0.0.1/tcp/9094"
+  clusterAPIAddr: "/ip4/127.0.0.1/tcp/9094"
+  ipfsAPIAddr: "/ip4/127.0.0.1/tcp/5001"
   clusterUser: ""
   clusterPass: ""
