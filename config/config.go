@@ -10,6 +10,7 @@ import (
 // Configurations exported
 type Configurations struct {
 	Server   ServerConfigurations
+	Services ServiceConfigurations
 	Database dataConfig.DatabaseConfiguration
 	Storage  dataConfig.StorageConfiguration
 }
@@ -17,6 +18,11 @@ type Configurations struct {
 // ServerConfigurations exported
 type ServerConfigurations struct {
 	Port string
+}
+
+// ServiceConfigurations exported
+type ServiceConfigurations struct {
+	TaskAllocator string
 }
 
 // GetConfigs Get Configurations from config.yaml and set in Configurations struct

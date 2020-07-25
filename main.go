@@ -8,10 +8,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"google.golang.org/grpc"
 	config "cap/upload-service/config"
 	database "cap/data-lib/database"
 	storage "cap/data-lib/storage"
-
+	pb "cap/upload-service/genproto"
 )
 
 const (
@@ -29,6 +30,24 @@ var (
 	store storage.Storage = nil
 )
 
+// Submit task to the TaskAllocator
+func submitTask (name string, cid string) {
+	conn, err := grpc.Dial(configs.Services.TaskAllocator)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer conn.Close()
+
+	client := pb.NewTaskInitServiceClient(conn)
+
+	_, err = client.SubmitTask(context.Background(), &pb.Task{VideoName: name, VideoCid: cid})
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+// HTTP handle video upload
 func uploadVideo(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
@@ -92,6 +111,9 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+
+		// submit task to allocator
+		go submitTask(name, cidString)
 
 		log.Println("Video Upload Successful")
 		fmt.Fprintf(w, "Video Upload Successful")
