@@ -32,7 +32,7 @@ var (
 
 // Submit task to the TaskAllocator
 func submitTask (name string, cid string) {
-	conn, err := grpc.Dial(configs.Services.TaskAllocator)
+	conn, err := grpc.Dial(configs.Services.TaskAllocator, grpc.WithInsecure())
 	if err != nil {
 		log.Println(err)
 		return
@@ -45,6 +45,8 @@ func submitTask (name string, cid string) {
 	if err != nil {
 		log.Println(err)
 	}
+	log.Println("Video:", cid, "submitted to task allocator")
+
 }
 
 // HTTP handle video upload
@@ -67,7 +69,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 		defer file.Close()
 
 		// store temp file
-		tempFile, err := ioutil.TempFile(TempDir, TempFilePrefix)
+		tempFile, err := ioutil.TempFile("", TempFilePrefix)
 		if err != nil {
 			log.Println(err)
 			fmt.Fprintf(w, "Video Upload Failed")
@@ -75,7 +77,6 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 		}
 		path := tempFile.Name()
 		log.Println("Path: ", path)
-		defer tempFile.Close()
 		defer os.Remove(path)
 
 		// read all of the contents of our uploaded file into a

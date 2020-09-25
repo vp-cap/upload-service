@@ -1,7 +1,7 @@
 server:
   port: "50051"
 
-service:
+services:
   taskAllocator: "localhost:50052"
 
 database:
