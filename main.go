@@ -1,25 +1,26 @@
 package main
 
 import (
-	"fmt"
 	"context"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"io/ioutil"
 	"os"
 
+	database "github.com/vp-cap/data-lib/database"
+	storage "github.com/vp-cap/data-lib/storage"
+	config "github.com/vp-cap/upload-service/config"
+	pb "github.com/vp-cap/upload-service/genproto"
+
 	"google.golang.org/grpc"
-	config "cap/upload-service/config"
-	database "cap/data-lib/database"
-	storage "cap/data-lib/storage"
-	pb "cap/upload-service/genproto"
 )
 
 const (
 	// UploadSizeLimit of 10 MB
 	UploadSizeLimit = 10 << 20 
 	// TempDir to store video uploads
-	TempDir = "F:/go/src/cap/upload-service/temp-uploads"
+	TempDir = "F:/go/src/vp-cap/upload-service/temp-uploads"
 	// TempFilePrefix for uploaded videos
 	TempFilePrefix = "upload-*"
 )
@@ -124,6 +125,38 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HTTP handle ad upload
+func uploadAdvertisement(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		ctx := r.Context()
+		r.ParseMultipartForm(UploadSizeLimit)
+
+		// get information from file
+		name := r.FormValue("adName")
+		imageLink := r.FormValue("imageLink")
+		object := r.FormValue("object")
+
+		log.Println("DB Entry")
+		// make an entry in the database
+		err := db.InsertAd(ctx, database.Advertisement{
+			Name: name,
+			ImageLink: imageLink,
+			Object: object,
+		})
+		if (err != nil) {
+			fmt.Fprintf(w, "Ad Upload Failed")
+			log.Println(err)
+			return
+		}
+		log.Println("Ad Upload Successful")
+		fmt.Fprintf(w, "Ad Upload Successful")
+
+	default:
+		fmt.Fprintf(w, "Only POST method supported")
+	}
+}
+
 func init() {
 	var err error
 	configs, err = config.GetConfigs()
@@ -153,7 +186,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	http.HandleFunc("/", uploadVideo)
+	http.HandleFunc("/video", uploadVideo)
+	http.HandleFunc("/ad", uploadAdvertisement)
+
 	log.Println("Serving on", configs.Server.Port)
 	http.ListenAndServe(":" + configs.Server.Port, nil)
 }

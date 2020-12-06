@@ -1,7 +1,7 @@
-ARG SERIVCE_PATH="/go/src/cap/upload-service"
+ARG SERIVCE_PATH="/go/src/vp-cap/upload-service"
 
 ################## 1st Build Stage ####################
-FROM golang:1.7.3 AS builder
+FROM golang:1.15 AS builder
 LABEL stage=builder
 
 WORKDIR $(SERIVCE_PATH)

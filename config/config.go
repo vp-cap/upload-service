@@ -3,7 +3,8 @@ package config
 import (
 	"log"
 
-	dataConfig "cap/data-lib/config"
+	dataConfig "github.com/vp-cap/data-lib/config"
+
 	viper "github.com/spf13/viper"
 )
 
