@@ -1,13 +1,7 @@
 # Upload Service
-CAP (Content-based Ad Placement) Video Upload Service
+CAP (Content-based Ad Placement) Video and Ad Upload Service
 
-## Setup
-
-## Usage
-```
-docker run 
-```
-
+Refer [architecture](https://github.com/vp-cap/architecture) for details
 
 ## References
 - https://www.youtube.com/watch?v=LSzR0VEraWw
