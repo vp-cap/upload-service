@@ -14,6 +14,8 @@ import (
 	pb "github.com/vp-cap/upload-service/genproto"
 
 	"google.golang.org/grpc"
+	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 )
 
 const (
@@ -51,7 +53,7 @@ func submitTask (name string, cid string) {
 }
 
 // HTTP handle video upload
-func uploadVideo(w http.ResponseWriter, r *http.Request) {
+func uploadVideo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	switch r.Method {
 	case "POST":
 		ctx := r.Context()
@@ -126,7 +128,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 // HTTP handle ad upload
-func uploadAdvertisement(w http.ResponseWriter, r *http.Request) {
+func uploadAdvertisement(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	switch r.Method {
 	case "POST":
 		ctx := r.Context()
@@ -135,6 +137,7 @@ func uploadAdvertisement(w http.ResponseWriter, r *http.Request) {
 		// get information from file
 		name := r.FormValue("adName")
 		imageLink := r.FormValue("imageLink")
+		redirectURL := r.FormValue("redirectUrl")
 		object := r.FormValue("object")
 
 		log.Println("DB Entry")
@@ -143,6 +146,7 @@ func uploadAdvertisement(w http.ResponseWriter, r *http.Request) {
 			Name: name,
 			ImageLink: imageLink,
 			Object: object,
+			RedirectURL: redirectURL,
 		})
 		if (err != nil) {
 			fmt.Fprintf(w, "Ad Upload Failed")
@@ -186,9 +190,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	http.HandleFunc("/video", uploadVideo)
-	http.HandleFunc("/ad", uploadAdvertisement)
+	router := httprouter.New()
+	router.POST("/video", uploadVideo)
+	router.POST("/ad", uploadAdvertisement)
+
+	handler := cors.Default().Handler(router)
 
 	log.Println("Serving on", configs.Server.Port)
-	http.ListenAndServe(":" + configs.Server.Port, nil)
+	http.ListenAndServe(":" + configs.Server.Port, handler)
 }

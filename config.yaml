@@ -1,0 +1,18 @@
+server:
+  port: "50051"
+
+services:
+  taskAllocator: "host.docker.internal:50052"
+
+database:
+  ip: "host.docker.internal"
+  port: "27017"
+  dbName: "cap"
+  dbUser: "cap-root"
+  dbPass: "cap-root"
+
+storage:
+  clusterAPIAddr: "/dns4/host.docker.internal/tcp/9094/http"
+  ipfsAPIAddr: "/dns4/host.docker.internal/tcp/5001/http"
+  clusterUser: ""
+  clusterPass: ""
