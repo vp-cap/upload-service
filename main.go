@@ -13,9 +13,10 @@ import (
 	config "github.com/vp-cap/upload-service/config"
 	pb "github.com/vp-cap/upload-service/genproto"
 
-	"google.golang.org/grpc"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
+	"google.golang.org/protobuf/proto"
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -34,22 +35,54 @@ var (
 )
 
 // Submit task to the TaskAllocator
-func submitTask (name string, cid string) {
-	conn, err := grpc.Dial(configs.Services.TaskAllocator, grpc.WithInsecure())
+func submitTask (name string, cid string) {	
+	conn, err := amqp.Dial(configs.Services.RabbitMq)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	client := pb.NewTaskInitServiceClient(conn)
-
-	_, err = client.SubmitTask(context.Background(), &pb.Task{VideoName: name, VideoCid: cid})
+	ch, err := conn.Channel()
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	log.Println("Video:", cid, "submitted to task allocator")
+	defer ch.Close()
 
+	q, err := ch.QueueDeclare(
+		"task_queue", // name
+		true,         // durable
+		false,        // delete when unused
+		false,        // exclusive
+		false,        // no-wait
+		nil,          // arguments
+	)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	task := &pb.Task{VideoName: name, VideoCid: cid}
+	body, err := proto.Marshal(task)
+	if err != nil {
+		log.Fatalln("Failed to encode :", err)
+	}
+	err = ch.Publish(
+		"",           // exchange
+		q.Name,       // routing key
+		false,        // mandatory
+		false,
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(body),
+		})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("Video:", cid, "submitted to task queue")
 }
 
 // HTTP handle video upload

@@ -1,5 +1,5 @@
 # Upload Service
-CAP (Content-based Ad Placement) Video and Ad Upload Service
+VP-CAP Video and Ad Upload Service
 
 Refer [architecture](https://github.com/vp-cap/architecture) for details
 
