@@ -35,18 +35,18 @@ var (
 )
 
 // Submit task to the TaskAllocator
-func submitTask (name string, cid string) {	
+func submitTask (name string, cid string) error {	
 	conn, err := amqp.Dial(configs.Services.RabbitMq)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	defer ch.Close()
 
@@ -60,13 +60,14 @@ func submitTask (name string, cid string) {
 	)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	task := &pb.Task{VideoName: name, VideoCid: cid}
 	body, err := proto.Marshal(task)
 	if err != nil {
-		log.Fatalln("Failed to encode :", err)
+		log.Println("Failed to encode :", err)
+		return err
 	}
 	err = ch.Publish(
 		"",           // exchange
@@ -80,9 +81,10 @@ func submitTask (name string, cid string) {
 		})
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	log.Println("Video:", cid, "submitted to task queue")
+	return nil
 }
 
 // HTTP handle video upload
@@ -125,7 +127,11 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 		log.Println("Writing to temp")
 		// write this byte array to our temporary file
-		tempFile.Write(fileBytes)
+		if _, err := tempFile.Write(fileBytes); err != nil {
+			fmt.Fprintf(w, "Video Upload Failed")
+			log.Println(err)
+			return
+		}
 
 		// store file in storage
 		var cidString string
@@ -136,8 +142,18 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			log.Println(err)
 			return
 		}
+
+		// submit task to allocator
+		if err = submitTask(name, cidString); err != nil {
+			fmt.Fprintf(w, "Video Upload Failed")
+			log.Println("Task submission to task queue failed")
+			return
+		}
+
 		log.Println("DB Entry")
-		// make an entry in the database
+		// Make an entry in the database, this is done after as we don't care if the video is processed and
+		// not saved to the DB - because most likely the user will try again and it will have the result and won't reprocess
+		// The case we don't want to happen is if its not submitted to process but saved to DB
 		err = db.InsertVideo(ctx, database.Video{
 			Name: name,
 			Description: description,
@@ -148,9 +164,6 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			log.Println(err)
 			return
 		}
-
-		// submit task to allocator
-		go submitTask(name, cidString)
 
 		log.Println("Video Upload Successful")
 		fmt.Fprintf(w, "Video Upload Successful")
@@ -165,7 +178,11 @@ func uploadAdvertisement(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	switch r.Method {
 	case "POST":
 		ctx := r.Context()
-		r.ParseMultipartForm(UploadSizeLimit)
+		if err := r.ParseMultipartForm(UploadSizeLimit); err != nil {
+			fmt.Fprintf(w, "Unable to parse Request")
+			log.Println(err)
+			return 
+		}
 
 		// get information from file
 		name := r.FormValue("adName")
@@ -205,23 +222,24 @@ func init() {
 func main() {
 	// Enable line numbers in logging
 	log.SetFlags(log.LstdFlags | log.Lshortfile )
-	log.Println(configs.Storage)
-
+	
 	ctx := context.Background()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
 
-	// DB and store
+	// DB and storage connection
 	var err error
 	db, err = database.GetDatabaseClient(ctx, configs.Database)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	log.Println("Connected to DB")
 	store, err = storage.GetStorageClient(configs.Storage)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	log.Println("Connected to Storage")
 
 	router := httprouter.New()
 	router.POST("/video", uploadVideo)

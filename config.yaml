@@ -5,8 +5,7 @@ services:
   rabbitMq: "amqp://test:test@host.docker.internal:5672/"
 
 database:
-  ip: "localhost"
-  port: "27017"
+  address: "host.docker.internal:27017"
   dbName: "cap"
   dbUser: "cap-root"
   dbPass: "cap-root"
