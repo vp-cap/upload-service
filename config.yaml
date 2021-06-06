@@ -5,13 +5,17 @@ services:
   rabbitMq: "amqp://test:test@host.docker.internal:5672/"
 
 database:
-  address: "host.docker.internal:27017"
-  dbName: "cap"
-  dbUser: "cap-root"
-  dbPass: "cap-root"
+  dbType: mongodb
+  mongoConfig:
+    address: "host.docker.internal:27017"
+    dbName: "cap"
+    dbUser: "cap-root"
+    dbPass: "cap-root"
 
 storage:
-  clusterAPIAddr: "/dns4/host.docker.internal/tcp/9094/http"
-  ipfsAPIAddr: "/dns4/host.docker.internal/tcp/5001/http"
-  clusterUser: ""
-  clusterPass: ""
+  storageType: ipfs
+  storageConfig:
+    clusterApiAddr: "/dns4/host.docker.internal/tcp/9094/http"
+    ipfsApiAddr: "/dns4/host.docker.internal/tcp/5001/http"
+    clusterUser: ""
+    clusterPass: ""

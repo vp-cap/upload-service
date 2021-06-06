@@ -66,7 +66,7 @@ func submitTask (name string, cid string) error {
 	task := &pb.Task{VideoName: name, VideoCid: cid}
 	body, err := proto.Marshal(task)
 	if err != nil {
-		log.Println("Failed to encode :", err)
+		log.Println("Failed to encode video", err)
 		return err
 	}
 	err = ch.Publish(

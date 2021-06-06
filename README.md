@@ -1,5 +1,6 @@
 # Upload Service
-VP-CAP Video and Ad Upload Service
+
+VP-CAP Video and Ad Upload Service is used to upload videos and ads. Currently, videos and ad metadata are stored in MongoDB and the video is stored in IFPS. 
 
 Refer [architecture](https://github.com/vp-cap/architecture) for details
 
