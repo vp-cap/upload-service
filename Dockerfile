@@ -10,8 +10,8 @@ ARG GIT_PASS
 WORKDIR ${SERVICE_PATH}
 
 ENV GO111MODULE=on
-RUN git config --global url."https://$GIT_USER:$GIT_PASS@github.com".insteadOf "https://github.com"
-RUN go env -w GOPRIVATE=github.com/vp-cap
+# RUN git config --global url."https://$GIT_USER:$GIT_PASS@github.com".insteadOf "https://github.com"
+# RUN go env -w GOPRIVATE=github.com/vp-cap
 
 COPY go.mod .
 COPY go.sum .
